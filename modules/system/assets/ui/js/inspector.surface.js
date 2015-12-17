@@ -119,6 +119,7 @@
         if (!this.parentSurface) {
             $(this.tableContainer).one('dispose-control', this.proxy(this.dispose))
             $(this.tableContainer).on('click', 'tr.group, tr.control-group', this.proxy(this.onGroupClick))
+            $(this.tableContainer).on('focus-control', this.proxy(this.focusFirstEditor))
         }
     }
 
@@ -126,6 +127,7 @@
         if (!this.parentSurface) {
             $(this.tableContainer).off('dispose-control', this.proxy(this.dispose))
             $(this.tableContainer).off('click', 'tr.group, tr.control-group', this.proxy(this.onGroupClick))
+            $(this.tableContainer).off('focus-control', this.proxy(this.focusFirstEditor))
         }
     }
 
@@ -374,7 +376,8 @@
         if (property.itemType == 'group' || isGroupedControl) {
             row.setAttribute('data-group-index', this.getGroupManager().getGroupIndex(group))
             row.setAttribute('data-parent-group-index', this.getGroupManager().getGroupIndex(group.parentGroup))
-        } else {
+        }
+        else {
             if (group.parentGroup) {
                 row.setAttribute('data-parent-group-index', this.getGroupManager().getGroupIndex(group))
             }
@@ -444,7 +447,8 @@
 
                     self.expandOrCollapseRows(rows, collapse, duration, noAnimation)
                 }, duration)
-            } else {
+            }
+            else {
                 $.oc.foundation.element.toggleClass(row, 'collapsed', collapse)
                 $.oc.foundation.element.toggleClass(row, 'expanded', !collapse)
 
@@ -581,8 +585,9 @@
 
     Surface.prototype.findPropertyEditor = function(property) {
         for (var i = 0, len = this.editors.length; i < len; i++) {
-            if (this.editors[i].getPropertyName() == property)
+            if (this.editors[i].getPropertyName() == property) {
                 return this.editors[i]
+            }
         }
 
         return null
@@ -590,8 +595,9 @@
 
     Surface.prototype.findExternalParameterEditor = function(property) {
         for (var i = 0, len = this.externalParameterEditors.length; i < len; i++) {
-            if (this.externalParameterEditors[i].getPropertyName() == property)
+            if (this.externalParameterEditors[i].getPropertyName() == property) {
                 return this.externalParameterEditors[i]
+            }
         }
 
         return null

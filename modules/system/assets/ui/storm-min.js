@@ -2324,9 +2324,7 @@ if(this.options.container)
 $(this.options.container).append(this.$container)
 else
 $(document.body).append(this.$container)
-var
-placement=this.calcPlacement(),position=this.calcPosition(placement)
-this.$container.css({left:position.x,top:position.y}).addClass('placement-'+placement)
+this.reposition()
 this.$container.addClass('in')
 if(this.$overlay)this.$overlay.addClass('in')
 $(document.body).addClass('popover-open')
@@ -2341,6 +2339,10 @@ return false
 if(!self.options.closeOnEsc){return false}
 if(e.keyCode==27){self.hide()
 return false}})}}
+Popover.prototype.reposition=function(){var
+placement=this.calcPlacement(),position=this.calcPosition(placement)
+this.$container.removeClass('placement-center placement-bottom placement-top placement-left placement-right')
+this.$container.css({left:position.x,top:position.y}).addClass('placement-'+placement)}
 Popover.prototype.getContent=function(){return typeof this.options.content=='function'?this.options.content.call(this.$el[0],this):this.options.content}
 Popover.prototype.calcDimensions=function(){var
 documentWidth=$(document).width(),documentHeight=$(document).height(),targetOffset=this.$el.offset(),targetWidth=this.$el.outerWidth(),targetHeight=this.$el.outerHeight()
@@ -2680,9 +2682,8 @@ var href=link.attr('href'),onclick=(typeof link.get(0).onclick=="function")?link
 $(this).find('td').not('.'+options.excludeClass).click(function(){if(onclick)
 onclick.apply(link.get(0))
 else
-window.location=href;})
-$(this).addClass(options.linkedClass)
-link.hide().after(link.html())})}
+window.location=href})
+$(this).addClass(options.linkedClass)})}
 RowLink.DEFAULTS={target:'a',excludeClass:'nolink',linkedClass:'rowlink'}
 var old=$.fn.rowLink
 $.fn.rowLink=function(option){var args=Array.prototype.slice.call(arguments,1)
@@ -2704,8 +2705,8 @@ ChangeMonitor.prototype=Object.create(BaseProto)
 ChangeMonitor.prototype.constructor=ChangeMonitor
 ChangeMonitor.prototype.init=function(){this.$el.on('change',this.proxy(this.change))
 this.$el.on('unchange.oc.changeMonitor',this.proxy(this.unchange))
-this.$el.on('pause.oc.changeMonitor ',this.proxy(this.pause))
-this.$el.on('resume.oc.changeMonitor ',this.proxy(this.resume))
+this.$el.on('pause.oc.changeMonitor',this.proxy(this.pause))
+this.$el.on('resume.oc.changeMonitor',this.proxy(this.resume))
 this.$el.on('keyup input paste','input, textarea:not(.ace_text-input)',this.proxy(this.onInputChange))
 $('input:not([type=hidden]), textarea:not(.ace_text-input)',this.$el).each(function(){$(this).data('oldval.oc.changeMonitor',$(this).val());})
 if(this.options.windowCloseConfirm)
@@ -3186,8 +3187,8 @@ var html=$anchor.html()
 $anchor.html('')
 $anchor.append($('<span class="title"></span>').append($('<span></span>').html(html)))
 var pane=$('> .tab-pane',this.$pagesContainer).eq(tabIndex).attr('id',targetId)
-$(li).append($('<span class="tab-close"><i>&times;</i></span>').click(function(){$(this).trigger('close.oc.tab')
-return false}))
+if(!$('span.tab-close',li).length){$(li).append($('<span class="tab-close"><i>&times;</i></span>').click(function(){$(this).trigger('close.oc.tab')
+return false}))}
 pane.data('tab',li)
 this.$el.trigger('initTab.oc.tab',[{'pane':pane,'tab':li}])}
 Tab.prototype.addTab=function(title,content,identifier,tabClass){var
@@ -3377,9 +3378,11 @@ this.build()
 if(!this.parentSurface){$.oc.foundation.controlUtils.markDisposable(this.tableContainer)}
 this.registerHandlers()}
 Surface.prototype.registerHandlers=function(){if(!this.parentSurface){$(this.tableContainer).one('dispose-control',this.proxy(this.dispose))
-$(this.tableContainer).on('click','tr.group, tr.control-group',this.proxy(this.onGroupClick))}}
+$(this.tableContainer).on('click','tr.group, tr.control-group',this.proxy(this.onGroupClick))
+$(this.tableContainer).on('focus-control',this.proxy(this.focusFirstEditor))}}
 Surface.prototype.unregisterHandlers=function(){if(!this.parentSurface){$(this.tableContainer).off('dispose-control',this.proxy(this.dispose))
-$(this.tableContainer).off('click','tr.group, tr.control-group',this.proxy(this.onGroupClick))}}
+$(this.tableContainer).off('click','tr.group, tr.control-group',this.proxy(this.onGroupClick))
+$(this.tableContainer).off('focus-control',this.proxy(this.focusFirstEditor))}}
 Surface.prototype.build=function(){this.tableContainer=document.createElement('div')
 var dataTable=document.createElement('table'),tbody=document.createElement('tbody')
 $.oc.foundation.element.addClass(dataTable,'inspector-fields')
@@ -3451,7 +3454,8 @@ if(propertyEditor&&!propertyEditor.supportsExternalParameterEditor()){continue}
 var cell=row.querySelector('td'),propertyDefinition=this.findPropertyDefinition(property),editor=new $.oc.inspector.externalParameterEditor(this,propertyDefinition,cell)
 this.externalParameterEditors.push(editor)}}
 Surface.prototype.applyGroupIndexAttribute=function(property,row,group,isGroupedControl){if(property.itemType=='group'||isGroupedControl){row.setAttribute('data-group-index',this.getGroupManager().getGroupIndex(group))
-row.setAttribute('data-parent-group-index',this.getGroupManager().getGroupIndex(group.parentGroup))}else{if(group.parentGroup){row.setAttribute('data-parent-group-index',this.getGroupManager().getGroupIndex(group))}}}
+row.setAttribute('data-parent-group-index',this.getGroupManager().getGroupIndex(group.parentGroup))}
+else{if(group.parentGroup){row.setAttribute('data-parent-group-index',this.getGroupManager().getGroupIndex(group))}}}
 Surface.prototype.applyGroupLevelToRow=function(row,group){if(row.hasAttribute('data-group-level')){return}
 var th=this.getRowHeadElement(row)
 if(th===null){throw new Error('Cannot find TH element for the Inspector row')}
@@ -3470,7 +3474,8 @@ if(row){this.toggleGroup(row,true)}}}
 Surface.prototype.expandOrCollapseRows=function(rows,collapse,duration,noAnimation){var row=rows.pop(),self=this
 if(row){if(!noAnimation){setTimeout(function toggleRow(){$.oc.foundation.element.toggleClass(row,'collapsed',collapse)
 $.oc.foundation.element.toggleClass(row,'expanded',!collapse)
-self.expandOrCollapseRows(rows,collapse,duration,noAnimation)},duration)}else{$.oc.foundation.element.toggleClass(row,'collapsed',collapse)
+self.expandOrCollapseRows(rows,collapse,duration,noAnimation)},duration)}
+else{$.oc.foundation.element.toggleClass(row,'collapsed',collapse)
 $.oc.foundation.element.toggleClass(row,'expanded',!collapse)
 self.expandOrCollapseRows(rows,collapse,duration,noAnimation)}}}
 Surface.prototype.getGroupManager=function(){return this.getRootSurface().groupManager}
@@ -3507,11 +3512,9 @@ $.oc.foundation.element.addClass(cell,'active')}
 Surface.prototype.markPropertyChanged=function(property,changed){var row=this.tableContainer.querySelector('tr[data-property="'+property+'"]')
 if(changed){$.oc.foundation.element.addClass(row,'changed')}
 else{$.oc.foundation.element.removeClass(row,'changed')}}
-Surface.prototype.findPropertyEditor=function(property){for(var i=0,len=this.editors.length;i<len;i++){if(this.editors[i].getPropertyName()==property)
-return this.editors[i]}
+Surface.prototype.findPropertyEditor=function(property){for(var i=0,len=this.editors.length;i<len;i++){if(this.editors[i].getPropertyName()==property){return this.editors[i]}}
 return null}
-Surface.prototype.findExternalParameterEditor=function(property){for(var i=0,len=this.externalParameterEditors.length;i<len;i++){if(this.externalParameterEditors[i].getPropertyName()==property)
-return this.externalParameterEditors[i]}
+Surface.prototype.findExternalParameterEditor=function(property){for(var i=0,len=this.externalParameterEditors.length;i<len;i++){if(this.externalParameterEditors[i].getPropertyName()==property){return this.externalParameterEditors[i]}}
 return null}
 Surface.prototype.findPropertyDefinition=function(property){for(var i=0,len=this.parsedProperties.properties.length;i<len;i++){var definition=this.parsedProperties.properties[i]
 if(definition.property==property){return definition}}
@@ -3619,12 +3622,10 @@ InspectorManager.prototype.setContainerPreference=function(value){if(!Modernizr.
 return localStorage.setItem('oc.inspectorUseContainer',value?"true":"false")}
 InspectorManager.prototype.applyValuesFromContainer=function($container){var applyEvent=$.Event('apply.oc.inspector')
 $container.trigger(applyEvent)
-if(applyEvent.isDefaultPrevented()){return false}
-return true}
+return!applyEvent.isDefaultPrevented();}
 InspectorManager.prototype.containerHidingAllowed=function($container){var allowedEvent=$.Event('beforeContainerHide.oc.inspector')
 $container.trigger(allowedEvent)
-if(allowedEvent.isDefaultPrevented()){return false}
-return true}
+return!allowedEvent.isDefaultPrevented();}
 InspectorManager.prototype.onInspectableClicked=function(ev){var $element=$(ev.currentTarget)
 if(this.createInspector($element)===false){return false}}
 $.oc.inspector.manager=new InspectorManager()
@@ -3675,7 +3676,8 @@ BaseWrapper.prototype.cleanupAfterSwitch=function(){this.switched=true
 this.dispose()}
 BaseWrapper.prototype.loadValues=function(configuration){var $valuesField=this.getElementValuesInput()
 if($valuesField.length>0){var valuesStr=$.trim($valuesField.val())
-try{return valuesStr.length===0?{}:$.parseJSON(valuesStr)}catch(err){throw new Error('Error parsing Inspector field values. '+err)}}
+try{return valuesStr.length===0?{}:$.parseJSON(valuesStr)}
+catch(err){throw new Error('Error parsing Inspector field values. '+err)}}
 var values={},attributes=this.$element.get(0).attributes
 for(var i=0,len=attributes.length;i<len;i++){var attribute=attributes[i],matches=[]
 if(matches=attribute.name.match(/^data-property-(.*)$/)){var normalizedPropertyName=this.normalizePropertyCode(matches[1],configuration)
@@ -3699,9 +3701,11 @@ this.configurationLoaded(result)
 return}
 var $form=this.$element.closest('form'),data=this.$element.data(),self=this
 $.oc.stripeLoadIndicator.show()
-var request=$form.request('onGetInspectorConfiguration',{data:data}).done(function inspectorConfigurationRequestDoneClosure(data){self.onConfigurartionRequestDone(data,result)}).always(function(){$.oc.stripeLoadIndicator.hide()})}
+$form.request('onGetInspectorConfiguration',{data:data}).done(function inspectorConfigurationRequestDoneClosure(data){self.onConfigurartionRequestDone(data,result)}).always(function(){$.oc.stripeLoadIndicator.hide()})}
 BaseWrapper.prototype.parseConfiguration=function(configuration){if(!$.isArray(configuration)&&!$.isPlainObject(configuration)){if($.trim(configuration)===0){return{}}
-try{return $.parseJSON(configuration)}catch(err){throw new Error('Error parsing Inspector configuration. '+err)}}else{return configuration}}
+try{return $.parseJSON(configuration)}
+catch(err){throw new Error('Error parsing Inspector configuration. '+err)}}
+else{return configuration}}
 BaseWrapper.prototype.configurationLoaded=function(configuration){var values=this.loadValues(configuration.properties)
 this.title=configuration.title
 this.description=configuration.description
@@ -3717,8 +3721,7 @@ return false}
 if(!e.isPropagationStopped()){this.init()}}
 BaseWrapper.prototype.triggerHiding=function(){var hidingEvent=$.Event('hiding.oc.inspector'),values=this.surface.getValues()
 this.$element.trigger(hidingEvent,[{values:values}])
-if(hidingEvent.isDefaultPrevented()){return false}
-return true}
+return!hidingEvent.isDefaultPrevented();}
 BaseWrapper.DEFAULTS={containerSupported:false}
 $.oc.inspector.wrappers.base=BaseWrapper}(window.jQuery);+function($){"use strict";var Base=$.oc.inspector.wrappers.base,BaseProto=Base.prototype
 var InspectorPopup=function($element,surface,options){this.$popoverContainer=null
@@ -3733,9 +3736,11 @@ this.popoverObj=null
 BaseProto.dispose.call(this)}
 InspectorPopup.prototype.createSurfaceAndUi=function(properties,values,title,description){this.showPopover()
 this.initSurface(this.$popoverContainer.find('[data-surface-container]').get(0),properties,values)
+this.repositionPopover()
 this.registerPopupHandlers()}
 InspectorPopup.prototype.adoptSurface=function(){this.showPopover()
 this.surface.moveToContainer(this.$popoverContainer.find('[data-surface-container]').get(0))
+this.repositionPopover()
 this.registerPopupHandlers()}
 InspectorPopup.prototype.cleanupAfterSwitch=function(){this.cleaningUp=true
 this.switched=true
@@ -3758,11 +3763,15 @@ this.$element.ocPopover({content:this.getPopoverContents(),highlightModalTarget:
 this.setInspectorVisibleFlag(true)
 this.popoverObj=this.$element.data('oc.popover')
 this.$popoverContainer=this.popoverObj.$container
+this.$popoverContainer.addClass('inspector-temporary-placement')
 if(this.options.inspectorCssClass!==undefined){this.$popoverContainer.addClass(this.options.inspectorCssClass)}
 if(this.options.containerSupported){var moveToContainerButton=$('<span class="inspector-move-to-container oc-icon-download">')
 this.$popoverContainer.find('.popover-head').append(moveToContainerButton)}
 this.$popoverContainer.find('[data-inspector-title]').text(this.title)
 this.$popoverContainer.find('[data-inspector-description]').text(this.description)}
+InspectorPopup.prototype.repositionPopover=function(){this.popoverObj.reposition()
+this.$popoverContainer.removeClass('inspector-temporary-placement')
+this.$popoverContainer.find('div[data-surface-container] > div').trigger('focus-control')}
 InspectorPopup.prototype.forceClose=function(){this.$popoverContainer.trigger('close.oc.popover')}
 InspectorPopup.prototype.registerPopupHandlers=function(){this.surface.options.onPopupDisplayed=this.proxy(this.onPopupEditorDisplayed)
 this.surface.options.onPopupHidden=this.proxy(this.onPopupEditorHidden)
@@ -3892,8 +3901,7 @@ GroupManager.prototype.isParentGroupExpanded=function(group){if(!group.parentGro
 return this.isGroupExpanded(group.parentGroup)}
 GroupManager.prototype.isGroupExpanded=function(group){if(!group.parentGroup){return true}
 var groupIndex=this.getGroupIndex(group),statuses=this.readGroupStatuses()
-if(statuses[groupIndex]!==undefined)
-return statuses[groupIndex]
+if(statuses[groupIndex]!==undefined){return statuses[groupIndex]}
 return false}
 GroupManager.prototype.setGroupStatus=function(groupIndex,expanded){var statuses=this.readGroupStatuses()
 statuses[groupIndex]=expanded
@@ -3995,11 +4003,13 @@ this.parentGroup=group
 this.group=null
 this.childInspector=null
 this.validationSet=null
+this.disposed=false
 Base.call(this)
 this.init()}
 BaseEditor.prototype=Object.create(BaseProto)
 BaseEditor.prototype.constructor=Base
-BaseEditor.prototype.dispose=function(){this.disposeValidation()
+BaseEditor.prototype.dispose=function(){this.disposed=true
+this.disposeValidation()
 if(this.childInspector){this.childInspector.dispose()}
 this.inspector=null
 this.propertyDefinition=null
@@ -4014,6 +4024,7 @@ BaseEditor.prototype.init=function(){this.build()
 this.registerHandlers()
 this.initValidation()}
 BaseEditor.prototype.build=function(){return null}
+BaseEditor.prototype.isDisposed=function(){return this.disposed}
 BaseEditor.prototype.registerHandlers=function(){}
 BaseEditor.prototype.onInspectorPropertyChanged=function(property,value){}
 BaseEditor.prototype.focus=function(){}
@@ -4095,8 +4106,7 @@ if(value===undefined){if(this.propertyDefinition.default!==undefined){isChecked=
 else{isChecked=this.normalizeCheckedValue(value)}
 editor.checked=isChecked
 this.containerCell.appendChild(container)}
-CheckboxEditor.prototype.normalizeCheckedValue=function(value){if(value=='0'||value=='false')
-return false
+CheckboxEditor.prototype.normalizeCheckedValue=function(value){if(value=='0'||value=='false'){return false}
 return value}
 CheckboxEditor.prototype.getInput=function(){return this.containerCell.querySelector('input')}
 CheckboxEditor.prototype.focus=function(){this.getInput().parentNode.focus()}
@@ -4152,8 +4162,7 @@ DropdownEditor.prototype.onSelectionChange=function(){var select=this.getSelect(
 this.inspector.setPropertyValue(this.propertyDefinition.property,select.value,this.initialization)}
 DropdownEditor.prototype.onInspectorPropertyChanged=function(property,value){if(!this.propertyDefinition.depends||this.propertyDefinition.depends.indexOf(property)===-1){return}
 var dependencyValues=this.getDependencyValues()
-if(this.prevDependencyValues===undefined||this.prevDependencyValues!=dependencyValues)
-this.loadDynamicOptions()}
+if(this.prevDependencyValues===undefined||this.prevDependencyValues!=dependencyValues){this.loadDynamicOptions()}}
 DropdownEditor.prototype.onExternalPropertyEditorHidden=function(){this.loadDynamicOptions(false)}
 DropdownEditor.prototype.updateDisplayedValue=function(value){var select=this.getSelect()
 select.value=value}
@@ -4162,8 +4171,8 @@ if(this.propertyDefinition.placeholder!==undefined){return undefined}
 var select=this.getSelect()
 if(select){return select.value}
 return undefined}
-DropdownEditor.prototype.destroyCustomSelect=function(){var select=this.getSelect()
-$(select).select2('destroy')}
+DropdownEditor.prototype.destroyCustomSelect=function(){var $select=$(this.getSelect())
+if($select.data('select2')!=null){$select.select2('destroy')}}
 DropdownEditor.prototype.unregisterHandlers=function(){var select=this.getSelect()
 $(select).off('change',this.proxy(this.onSelectionChange))}
 DropdownEditor.prototype.loadStaticOptions=function(select){var value=this.inspector.getPropertyValue(this.propertyDefinition.property)
@@ -4185,9 +4194,11 @@ if(value===undefined){value='';}
 result+=property+':'+value+'-'}
 return result}
 DropdownEditor.prototype.showLoadingIndicator=function(){if(!Modernizr.touch){this.indicatorContainer.loadIndicator()}}
-DropdownEditor.prototype.hideLoadingIndicator=function(){if(!Modernizr.touch){this.indicatorContainer.loadIndicator('hide')
+DropdownEditor.prototype.hideLoadingIndicator=function(){if(this.isDisposed()){return}
+if(!Modernizr.touch){this.indicatorContainer.loadIndicator('hide')
 this.indicatorContainer.loadIndicator('destroy')}}
-DropdownEditor.prototype.optionsRequestDone=function(data,currentValue,initialization){var select=this.getSelect()
+DropdownEditor.prototype.optionsRequestDone=function(data,currentValue,initialization){if(this.isDisposed()){return}
+var select=this.getSelect()
 this.destroyCustomSelect()
 this.clearOptions(select)
 this.initCustomSelect()
@@ -4224,7 +4235,7 @@ PopupBase.prototype.getPopupContent=function(){return'<form>                    
                 </div>                                                                                  \
                 <div class="modal-footer">                                                              \
                     <button type="submit" class="btn btn-primary">OK</button>                           \
-                    <button type="button" class="btn btn-default"data-dismiss="popup">Cancel</button>   \
+                    <button type="button" class="btn btn-default" data-dismiss="popup">Cancel</button>   \
                 </div>                                                                                  \
                 </form>'}
 PopupBase.prototype.updateDisplayedValue=function(value){this.setLinkText(this.getLink(),value)}
@@ -4281,7 +4292,7 @@ TextEditor.prototype.getPopupContent=function(){return'<form>                   
                 </div>                                                                                  \
                 <div class="modal-footer">                                                              \
                     <button type="submit" class="btn btn-primary">OK</button>                           \
-                    <button type="button" class="btn btn-default"data-dismiss="popup">Cancel</button>   \
+                    <button type="button" class="btn btn-default" data-dismiss="popup">Cancel</button>   \
                 </div>                                                                                  \
                 </form>'}
 TextEditor.prototype.configurePopup=function(popup){var $textarea=$(popup).find('textarea'),value=this.inspector.getPropertyValue(this.propertyDefinition.property)
@@ -4319,7 +4330,8 @@ if(value===undefined){value=this.propertyDefinition.default}
 if(value!==undefined&&value.length!==undefined&&value.length>0&&typeof value!=='string'){var textValues=[]
 for(var i=0,len=value.length;i<len;i++){textValues.push(this.valueToText(value[i]))}
 text='['+textValues.join(', ')+']'
-$.oc.foundation.element.removeClass(link,'placeholder')}else{text=this.propertyDefinition.placeholder
+$.oc.foundation.element.removeClass(link,'placeholder')}
+else{text=this.propertyDefinition.placeholder
 if((typeof text==='string'&&text.length==0)||text===undefined){text='[ ]'}
 $.oc.foundation.element.addClass(link,'placeholder')}
 link.textContent=text}
@@ -4332,7 +4344,8 @@ this.editors.push[editor]}
 SetEditor.prototype.isCheckedByDefault=function(value){if(!this.propertyDefinition.default){return false}
 return this.propertyDefinition.default.indexOf(value)>-1}
 SetEditor.prototype.showLoadingIndicator=function(){$(this.getLink()).loadIndicator()}
-SetEditor.prototype.hideLoadingIndicator=function(){var $link=$(this.getLink())
+SetEditor.prototype.hideLoadingIndicator=function(){if(this.isDisposed()){return}
+var $link=$(this.getLink())
 $link.loadIndicator('hide')
 $link.loadIndicator('destroy')}
 SetEditor.prototype.loadDynamicItems=function(){var link=this.getLink(),data=this.inspector.getValues(),$form=$(link).closest('form')
@@ -4341,7 +4354,8 @@ this.showLoadingIndicator()
 data['inspectorProperty']=this.propertyDefinition.property
 data['inspectorClassName']=this.inspector.options.inspectorClass
 $form.request('onInspectableGetOptions',{data:data,}).done(this.proxy(this.itemsRequestDone)).always(this.proxy(this.hideLoadingIndicator))}
-SetEditor.prototype.itemsRequestDone=function(data,currentValue,initialization){this.loadedItems={}
+SetEditor.prototype.itemsRequestDone=function(data,currentValue,initialization){if(this.isDisposed()){return}
+this.loadedItems={}
 if(data.options){for(var i=data.options.length-1;i>=0;i--){this.buildItemEditor(data.options[i].value,data.options[i].title)
 this.loadedItems[data.options[i].value]=data.options[i].title}}
 this.setLinkText(this.getLink())}
@@ -4481,7 +4495,7 @@ ObjectListEditor.prototype.getPopupContent=function(){return'<form>             
                 </div>                                                                                  \
                 <div class="modal-footer">                                                              \
                     <button type="submit" class="btn btn-primary">OK</button>                           \
-                    <button type="button" class="btn btn-default"data-dismiss="popup">Cancel</button>   \
+                    <button type="button" class="btn btn-default" data-dismiss="popup">Cancel</button>   \
                 </div>                                                                                  \
                 </form>'}
 ObjectListEditor.prototype.buildPopupContents=function(popup){this.buildItemsTable(popup)}
@@ -4529,7 +4543,8 @@ if(!selectedRow){throw new Exception('A row is not found for the updated data')}
 if(property!==this.propertyDefinition.titleProperty){return}
 value=$.trim(value)
 if(value.length===0){value='[No title]'
-$.oc.foundation.element.addClass(selectedRow,'disabled')}else{$.oc.foundation.element.removeClass(selectedRow,'disabled')}
+$.oc.foundation.element.addClass(selectedRow,'disabled')}
+else{$.oc.foundation.element.removeClass(selectedRow,'disabled')}
 selectedRow.firstChild.textContent=value}
 ObjectListEditor.prototype.getSelectedRow=function(){if(!this.popup){throw new Error('Trying to get selected row without a popup reference.')}
 var rows=this.getTableBody().children
@@ -4554,7 +4569,8 @@ var nextRow=selectedRow.nextElementSibling,prevRow=selectedRow.previousElementSi
 this.disposeInspector()
 tbody.removeChild(selectedRow)
 var newSelectedRow=nextRow?nextRow:prevRow
-if(newSelectedRow){this.selectRow(newSelectedRow)}else{tbody.appendChild(this.buildEmptyRow())}
+if(newSelectedRow){this.selectRow(newSelectedRow)}
+else{tbody.appendChild(this.buildEmptyRow())}
 this.updateScrollpads()}
 ObjectListEditor.prototype.applyDataToParentInspector=function(){var selectedRow=this.getSelectedRow(),tbody=this.getTableBody(),dataRows=tbody.querySelectorAll('tr[data-inspector-values]'),link=this.getLink(),result=this.getEmptyValue()
 if(selectedRow){if(!this.validateKeyValue()){return}
@@ -4664,7 +4680,7 @@ ObjectEditor.prototype.getUndefinedValue=function(){var result={}
 for(var i=0,len=this.propertyDefinition.properties.length;i<len;i++){var propertyName=this.propertyDefinition.properties[i].property,editor=this.childInspector.findPropertyEditor(propertyName)
 if(editor){result[propertyName]=editor.getUndefinedValue()}}
 return this.getValueOrRemove(result)}
-ObjectEditor.prototype.validate=function(){var values=values=this.childInspector.getValues()
+ObjectEditor.prototype.validate=function(){var values=this.childInspector.getValues()
 if(this.cleanUpValue(values)===$.oc.inspector.removedProperty){return true}
 return this.childInspector.validate()}
 ObjectEditor.prototype.onInspectorDataChange=function(property,value){var values=this.childInspector.getValues()
@@ -4714,9 +4730,8 @@ if(value===undefined||$.isEmptyObject(value)){var placeholder=this.propertyDefin
 if(placeholder!==undefined){$.oc.foundation.element.addClass(link,'placeholder')
 link.textContent=placeholder}
 else{link.textContent='Items: 0'}}
-else{var itemCount=0
-if(typeof value!=='object'){this.throwError('Object list value should be an object.')}
-itemCount=this.getValueKeys(value).length
+else{if(typeof value!=='object'){this.throwError('Object list value should be an object.')}
+var itemCount=this.getValueKeys(value).length
 $.oc.foundation.element.removeClass(link,'placeholder')
 link.textContent='Items: '+itemCount}}
 DictionaryEditor.prototype.getPopupContent=function(){return'<form>                                                                                  \
@@ -4763,7 +4778,7 @@ DictionaryEditor.prototype.getPopupContent=function(){return'<form>             
                 </div>                                                                                  \
                 <div class="modal-footer">                                                              \
                     <button type="submit" class="btn btn-primary">OK</button>                           \
-                    <button type="button" class="btn btn-default"data-dismiss="popup">Cancel</button>   \
+                    <button type="button" class="btn btn-default" data-dismiss="popup">Cancel</button>   \
                 </div>                                                                                  \
                 </form>'}
 DictionaryEditor.prototype.configurePopup=function(popup){this.buildItemsTable(popup.get(0))
@@ -4868,10 +4883,8 @@ DictionaryEditor.prototype.onCommand=function(ev){var command=ev.currentTarget.g
 switch(command){case'create-item':this.createItem()
 break;case'delete-item':this.deleteItem()
 break;}}
-DictionaryEditor.prototype.onKeyDown=function(ev){if(ev.keyCode==40)
-return this.navigateDown(ev)
-else if(ev.keyCode==38)
-return this.navigateUp(ev)}
+DictionaryEditor.prototype.onKeyDown=function(ev){if(ev.keyCode==40){return this.navigateDown(ev)}
+else if(ev.keyCode==38){return this.navigateUp(ev)}}
 $.oc.inspector.propertyEditors.dictionary=DictionaryEditor}(window.jQuery);+function($){"use strict";var Base=$.oc.inspector.propertyEditors.string,BaseProto=Base.prototype
 var AutocompleteEditor=function(inspector,propertyDefinition,containerCell,group){Base.call(this,inspector,propertyDefinition,containerCell,group)}
 AutocompleteEditor.prototype=Object.create(BaseProto)
@@ -4907,7 +4920,8 @@ $(this.getInput()).on('change',this.proxy(this.onInputKeyUp))}
 AutocompleteEditor.prototype.unregisterHandlers=function(){BaseProto.unregisterHandlers.call(this)
 $(this.getInput()).off('change',this.proxy(this.onInputKeyUp))}
 AutocompleteEditor.prototype.showLoadingIndicator=function(){$(this.getContainer()).loadIndicator()}
-AutocompleteEditor.prototype.hideLoadingIndicator=function(){var $container=$(this.getContainer())
+AutocompleteEditor.prototype.hideLoadingIndicator=function(){if(this.isDisposed()){return}
+var $container=$(this.getContainer())
 $container.loadIndicator('hide')
 $container.loadIndicator('destroy')
 $container.removeClass('loading-indicator-container')}
@@ -4917,7 +4931,8 @@ this.showLoadingIndicator()
 data['inspectorProperty']=this.propertyDefinition.property
 data['inspectorClassName']=this.inspector.options.inspectorClass
 $form.request('onInspectableGetOptions',{data:data,}).done(this.proxy(this.itemsRequestDone)).always(this.proxy(this.hideLoadingIndicator))}
-AutocompleteEditor.prototype.itemsRequestDone=function(data,currentValue,initialization){var loadedItems={}
+AutocompleteEditor.prototype.itemsRequestDone=function(data,currentValue,initialization){if(this.isDisposed()){return}
+var loadedItems={}
 if(data.options){for(var i=data.options.length-1;i>=0;i--){loadedItems[data.options[i].value]=data.options[i].title}}
 this.buildAutoComplete(loadedItems)}
 $.oc.inspector.propertyEditors.autocomplete=AutocompleteEditor}(window.jQuery);+function($){"use strict";if($.oc===undefined)
@@ -4972,18 +4987,15 @@ BaseValidator.prototype.getMessage=function(defaultMessage){if(this.options.mess
 if(defaultMessage!==undefined){return defaultMessage}
 return this.defaultMessage}
 BaseValidator.prototype.isScalar=function(value){if(value===undefined||value===null){return true}
-if(typeof value==='string'||typeof value=='number'||typeof value=='boolean'){return true}
-return false}
+return!!(typeof value==='string'||typeof value=='number'||typeof value=='boolean');}
 BaseValidator.prototype.isValid=function(value){return null}
 $.oc.inspector.validators.base=BaseValidator}(window.jQuery);+function($){"use strict";var Base=$.oc.inspector.validators.base,BaseProto=Base.prototype
 var BaseNumber=function(options){Base.call(this,options)}
 BaseNumber.prototype=Object.create(BaseProto)
 BaseNumber.prototype.constructor=Base
-BaseNumber.prototype.doCommonChecks=function(value){if(this.options.min!==undefined||this.options.max!==undefined){if(this.options.min!==undefined){if(this.options.min.value===undefined)
-throw new Error('The min.value parameter is not defined in the Inspector validator configuration')
+BaseNumber.prototype.doCommonChecks=function(value){if(this.options.min!==undefined||this.options.max!==undefined){if(this.options.min!==undefined){if(this.options.min.value===undefined){throw new Error('The min.value parameter is not defined in the Inspector validator configuration')}
 if(value<this.options.min.value){return this.options.min.message!==undefined?this.options.min.message:"The value should not be less than "+this.options.min.value}}
-if(this.options.max!==undefined){if(this.options.max.value===undefined)
-throw new Error('The max.value parameter is not defined in the table Inspector validator configuration')
+if(this.options.max!==undefined){if(this.options.max.value===undefined){throw new Error('The max.value parameter is not defined in the table Inspector validator configuration')}
 if(value>this.options.max.value){return this.options.max.message!==undefined?this.options.max.message:"The value should not be greater than "+this.options.max.value}}}}
 $.oc.inspector.validators.baseNumber=BaseNumber}(window.jQuery);+function($){"use strict";var Base=$.oc.inspector.validators.base,BaseProto=Base.prototype
 var RequiredValidator=function(options){Base.call(this,options)
@@ -5036,8 +5048,7 @@ if(typeof value=='boolean'){this.throwError('The Length Inspector validator cann
 var length=null
 if(Object.prototype.toString.call(value)==='[object Array]'||typeof value==='string'){length=value.length}
 else if(typeof value==='object'){length=this.getObjectLength(value)}
-if(this.options.min!==undefined||this.options.max!==undefined){if(this.options.min!==undefined){if(this.options.min.value===undefined)
-throw new Error('The min.value parameter is not defined in the Length Inspector validator configuration.')
+if(this.options.min!==undefined||this.options.max!==undefined){if(this.options.min!==undefined){if(this.options.min.value===undefined){throw new Error('The min.value parameter is not defined in the Length Inspector validator configuration.')}
 if(length<this.options.min.value){return this.options.min.message!==undefined?this.options.min.message:"The value should not be shorter than "+this.options.min.value}}
 if(this.options.max!==undefined){if(this.options.max.value===undefined)
 throw new Error('The max.value parameter is not defined in the Length Inspector validator configuration.')

@@ -5,27 +5,27 @@
         <div class="scoreboard">
             <div data-control="toolbar">
                 <div class="scoreboard-item title-value">
-                    <h4>Created</h4>
+                    <h4><?= e(trans('backend::lang.import_export.created')) ?></h4>
                     <p><?= $importResults->created ?></p>
                 </div>
                 <div class="scoreboard-item title-value">
-                    <h4>Updated</h4>
+                    <h4><?= e(trans('backend::lang.import_export.updated')) ?></h4>
                     <p><?= $importResults->updated ?></p>
                 </div>
                 <?php if ($importResults->skippedCount): ?>
                     <div class="scoreboard-item title-value">
-                        <h4>Skipped</h4>
+                        <h4><?= e(trans('backend::lang.import_export.skipped')) ?></h4>
                         <p><?= $importResults->skippedCount ?></p>
                     </div>
                 <?php endif ?>
                 <?php if ($importResults->warningCount): ?>
                     <div class="scoreboard-item title-value">
-                        <h4>Warnings</h4>
+                        <h4><?= e(trans('backend::lang.import_export.warnings')) ?></h4>
                         <p><?= $importResults->warningCount ?></p>
                     </div>
                 <?php endif ?>
                 <div class="scoreboard-item title-value">
-                    <h4>Errors</h4>
+                    <h4><?= e(trans('backend::lang.import_export.errors')) ?></h4>
                     <p><?= $importResults->errorCount ?></p>
                 </div>
             </div>
@@ -34,9 +34,9 @@
         <?php if ($importResults->hasMessages): ?>
             <?php
                 $tabs = [
-                    'skipped' => 'Skipped rows',
-                    'warnings' => 'Warnings',
-                    'errors' => 'Errors',
+                    'skipped' => trans('backend::lang.import_export.skipped_rows'),
+                    'warnings' => trans('backend::lang.import_export.warnings'),
+                    'errors' => trans('backend::lang.import_export.errors'),
                 ];
 
                 if (!$importResults->skippedCount) unset($tabs['skipped']);
@@ -72,7 +72,6 @@
                     <?php endforeach ?>
                 </div>
             </div>
-
         <?php endif ?>
 
     </div>
